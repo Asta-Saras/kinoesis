@@ -5,6 +5,8 @@ import type { ASTNode, Program } from './ast';
 export class Compiler {
   private nodes: Map<string, AppNode> = new Map();
   private edges: Edge[] = [];
+  // Exec pins currently being traversed; re-entering one means the exec wiring forms a cycle
+  private visiting: Set<string> = new Set();
 
   constructor(nodes: AppNode[], edges: Edge[]) {
     nodes.forEach(n => this.nodes.set(n.id, n));
@@ -22,6 +24,19 @@ export class Compiler {
   }
 
   private traverseExecution(nodeId: string, handleId: string): ASTNode[] {
+    const key = `${nodeId}:${handleId}`;
+    if (this.visiting.has(key)) {
+      throw new Error(`Execution cycle detected at node "${nodeId}". Use a loop node instead of wiring execution back to an earlier node.`);
+    }
+    this.visiting.add(key);
+    try {
+      return this.traverseExecutionStep(nodeId, handleId);
+    } finally {
+      this.visiting.delete(key);
+    }
+  }
+
+  private traverseExecutionStep(nodeId: string, handleId: string): ASTNode[] {
     const outEdges = this.edges.filter(e => e.source === nodeId && e.sourceHandle === handleId);
     if (outEdges.length === 0) return [];
     

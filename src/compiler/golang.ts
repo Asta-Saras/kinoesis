@@ -95,7 +95,7 @@ export class GolangGenerator implements CodeGenerator {
         return node.name;
       case 'Literal':
         if (node.valueType === 'string') {
-          return `"${node.value}"`;
+          return JSON.stringify(String(node.value)); // escapes quotes, backslashes, newlines (valid Go string syntax)
         }
         return String(node.value);
       case 'ArrayLiteral': {

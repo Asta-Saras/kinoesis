@@ -82,7 +82,7 @@ export class JavascriptGenerator implements CodeGenerator {
         return node.name;
       case 'Literal':
         if (node.valueType === 'string') {
-          return `"${node.value}"`;
+          return JSON.stringify(String(node.value)); // escapes quotes, backslashes, newlines
         }
         return String(node.value);
       case 'ArrayLiteral': {

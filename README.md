@@ -1,4 +1,4 @@
-# flow2code
+# Kinoesis
 
 A visual, node-based programming environment that compiles to real source code. Build programs by connecting nodes on an infinite canvas — like Unreal Engine Blueprints — and watch the code generate live in a Monaco editor panel.
 

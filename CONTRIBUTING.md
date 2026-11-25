@@ -1,6 +1,6 @@
-# Contributing to flow2code
+# Contributing to Kinoesis
 
-This document is the hands-on guide for working on flow2code — whether you are a human developer or an AI agent continuing a session. It covers the dev environment, file-by-file orientation, naming conventions, known gotchas, and a step-by-step checklist for the most common change types.
+This document is the hands-on guide for working on Kinoesis — whether you are a human developer or an AI agent continuing a session. It covers the dev environment, file-by-file orientation, naming conventions, known gotchas, and a step-by-step checklist for the most common change types.
 
 ---
 

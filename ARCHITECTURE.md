@@ -1,6 +1,6 @@
 # Architecture
 
-This document covers the internal design of flow2code: how the visual graph maps to code, how the canvas interaction model works, and the data flow through the system.
+This document covers the internal design of Kinoesis: how the visual graph maps to code, how the canvas interaction model works, and the data flow through the system.
 
 ---
 

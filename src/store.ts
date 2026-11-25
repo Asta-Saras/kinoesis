@@ -48,7 +48,7 @@ export const useStore = create<AppState>((set, get) => ({
       id: 'declare-1',
       type: 'declareVar',
       position: { x: 250, y: 50 },
-      data: { varName: 'message', varType: 'string', initialValue: 'Hello flow2code!' },
+      data: { varName: 'message', varType: 'string', 'data-in-value': 'Hello Kinoesis!' },
     },
     {
       id: 'print-1',
