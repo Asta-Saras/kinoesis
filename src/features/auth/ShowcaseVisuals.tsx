@@ -82,7 +82,7 @@ export function DeveloperVisual() {
         </svg>
       </div>
 
-      <div className="ml-auto w-[88%] rounded-xl border border-line bg-black/60 p-4 font-mono text-[12px] leading-6 shadow-xl shadow-black/40 backdrop-blur animate-float">
+      <div className="ml-auto w-[88%] animate-float rounded-xl border border-line bg-black/60 p-4 font-mono text-[12px] leading-6 shadow-xl shadow-black/40 backdrop-blur [@media(max-height:800px)]:hidden">
         <div className="text-zinc-500">
           <span className="text-accent">$</span> kinoesis generate <span className="text-zinc-300">--lang go</span>
         </div>
