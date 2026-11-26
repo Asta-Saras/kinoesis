@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Secrets (API keys, DB URIs)
+.env
+.env.*
+!.env.example
+
+# Local user storage used when MongoDB isn't configured
+server/data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

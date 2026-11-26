@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Bell, LogOut, Plus, Search } from 'lucide-react';
 import { WORKSPACES } from '../config/workspaces';
 import { useWorkspaceTheme } from '../hooks/useWorkspaceTheme';
-import { useAuthStore } from '../stores/authStore';
+import { isDemoMode, useAuthStore } from '../stores/authStore';
 import { Logo } from '../components/brand/Logo';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/cn';
@@ -97,7 +97,7 @@ export function AppShell() {
                 signOut();
                 navigate('/auth', { replace: true });
               }}
-              title="Sign out"
+              title={isDemoMode ? 'Exit demo' : 'Sign out'}
               className="cursor-pointer rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.05] hover:text-zinc-100"
             >
               <LogOut className="h-4 w-4" />
@@ -126,7 +126,7 @@ export function AppShell() {
             <Link to="/editor">
               <Button size="sm">
                 <Plus className="h-3.5 w-3.5" />
-                {ws.primaryAction}
+                {isDemoMode ? 'Open sample flow' : ws.primaryAction}
               </Button>
             </Link>
           </div>

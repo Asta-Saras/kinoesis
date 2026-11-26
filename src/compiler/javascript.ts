@@ -77,7 +77,7 @@ export class JavascriptGenerator implements CodeGenerator {
   private generateExpression(node: ASTNode): string {
     switch (node.type) {
       case 'BinaryExpression':
-        return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
+        return `(${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)})`;
       case 'Identifier':
         return node.name;
       case 'Literal':

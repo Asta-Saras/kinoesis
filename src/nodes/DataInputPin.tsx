@@ -37,7 +37,7 @@ export function DataInputPin({
           value={String(val)}
           onChange={(e) => updateNodeData(nodeId, { [pinId]: e.target.value === 'true' })}
           disabled={isConnected}
-          className={`w-20 px-1 py-0.5 text-xs rounded border border-gray-600 focus:outline-none ${
+          className={`nodrag w-20 px-1 py-0.5 text-xs rounded border border-gray-600 focus:outline-none ${
             isConnected
               ? 'bg-gray-400 text-gray-600 cursor-not-allowed border-gray-500'
               : 'bg-white text-black'
@@ -53,7 +53,7 @@ export function DataInputPin({
           onChange={(e) => updateNodeData(nodeId, { [pinId]: e.target.value })}
           disabled={isConnected}
           placeholder="Fallback"
-          className={`w-20 px-1 py-0.5 text-xs rounded border border-gray-600 focus:outline-none ${
+          className={`nodrag w-20 px-1 py-0.5 text-xs rounded border border-gray-600 focus:outline-none ${
             isConnected
               ? 'bg-gray-400 text-gray-600 cursor-not-allowed border-gray-500'
               : 'bg-white text-black'

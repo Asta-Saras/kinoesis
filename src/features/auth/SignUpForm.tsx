@@ -63,7 +63,7 @@ export function SignUpForm({ workspace, onSuccess }: SignUpFormProps) {
     } catch (err) {
       if (err instanceof AuthError && err.code === 'EMAIL_TAKEN') setErrors((e) => ({ ...e, email: err.message }));
       else if (err instanceof AuthError && err.code === 'USERNAME_TAKEN') setErrors((e) => ({ ...e, username: err.message }));
-      else setFormError('Something went wrong. Please try again.');
+      else setFormError(err instanceof AuthError ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

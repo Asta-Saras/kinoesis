@@ -6,10 +6,10 @@ import {
   Panel,
   useReactFlow,
 } from '@xyflow/react';
-import type { Connection, Edge, FinalConnectionState, OnConnectStartParams } from '@xyflow/react';
+import type { Connection, OnConnectEnd, OnConnectStart, OnConnectStartParams, ReactFlowProps } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { useStore } from './store';
+import { canConnect, useStore } from './store';
 import { StartNode } from './nodes/StartNode';
 import { DeclareVarNode } from './nodes/DeclareVarNode';
 import { GetVarNode } from './nodes/GetVarNode';
@@ -45,6 +45,24 @@ const nodeTypes = {
   arrayLength: ArrayLengthNode,
 };
 
+// Pins on newly created nodes, before React Flow has measured their handles.
+const newNodePins: Record<string, { source?: string[]; target?: string[] }> = {
+  declareVar: { source: ['exec-out', 'data-out-value:int'], target: ['exec-in', 'data-in-value:int'] },
+  getVar: { source: ['data-out-value:int'] },
+  literal: { source: ['data-out-value:int'] },
+  math: { source: ['data-out-result:int'], target: ['data-in-A:int', 'data-in-B:int'] },
+  compare: { source: ['data-out-result:bool'], target: ['data-in-A:int', 'data-in-B:int'] },
+  if: { source: ['exec-out'], target: ['exec-in', 'data-in-condition:bool'] },
+  for: { source: ['exec-out-loop', 'data-out-index:int'], target: ['exec-in', 'data-in-start:int', 'data-in-end:int'] },
+  forEach: { source: ['exec-out-loop', 'data-out-index:int', 'data-out-item:any'], target: ['exec-in', 'data-in-array:[]any'] },
+  print: { source: ['exec-out'], target: ['exec-in', 'data-in-value:any'] },
+  arrayLiteral: { source: ['data-out-value:[]int'] },
+  arrayAppend: { source: ['exec-out', 'data-out-array:[]any'], target: ['exec-in', 'data-in-array:[]any', 'data-in-element:any'] },
+  arrayGet: { source: ['data-out-element:any'], target: ['data-in-array:[]any', 'data-in-index:int'] },
+  arraySet: { source: ['exec-out'], target: ['exec-in', 'data-in-array:[]any', 'data-in-index:int', 'data-in-value:any'] },
+  arrayLength: { source: ['data-out-length:int'], target: ['data-in-array:[]any'] },
+};
+
 export function Canvas() {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setNodes, reconnectEdge, deleteEdge } = useStore();
   const [menuState, setMenuState] = useState<{ isOpen: boolean; x: number; y: number }>({
@@ -54,6 +72,7 @@ export function Canvas() {
   });
 
   const connectingParams = useRef<OnConnectStartParams | null>(null);
+  const reconnecting = useRef(false);
   const justOpenedMenuFromEdgeDrop = useRef(false);
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -68,11 +87,11 @@ export function Canvas() {
       data: {},
     };
 
-    setNodes([...nodes, newNode]);
+    setNodes([...useStore.getState().nodes, newNode]);
     return newNodeId;
-  }, [nodes, setNodes]);
+  }, [setNodes]);
 
-  const openMenuAt = useCallback((event: MouseEvent | TouchEvent) => {
+  const openMenuAt = useCallback((event: MouseEvent | TouchEvent, fromEdgeDrop = false) => {
     if (!reactFlowWrapper.current) return;
     const bounds = reactFlowWrapper.current.getBoundingClientRect();
 
@@ -87,7 +106,7 @@ export function Canvas() {
       clientY = (event as TouchEvent).changedTouches[0].clientY;
     }
 
-    justOpenedMenuFromEdgeDrop.current = true;
+    justOpenedMenuFromEdgeDrop.current = fromEdgeDrop;
     setMenuState({
       isOpen: true,
       x: clientX - bounds.left,
@@ -112,6 +131,7 @@ export function Canvas() {
     }
     if (menuState.isOpen) {
       setMenuState((prev) => ({ ...prev, isOpen: false }));
+      connectingParams.current = null;
     }
   }, [menuState.isOpen]);
 
@@ -125,87 +145,63 @@ export function Canvas() {
       });
       const newNodeId = addNode(type, position);
 
-      if (connectingParams.current) {
-        const { nodeId, handleId, handleType } = connectingParams.current;
+      const pending = connectingParams.current;
+      if (!pending?.nodeId || !pending.handleId) return;
 
-        if (handleType === 'source') {
-          const targetHandle = handleId?.startsWith('exec') ? 'exec-in' : 'data-in-value';
-          onConnect({
-            source: nodeId!,
-            sourceHandle: handleId,
-            target: newNodeId,
-            targetHandle: targetHandle,
-          });
-        } else {
-          const sourceHandle = handleId?.startsWith('exec') ? 'exec-out' : 'data-out-value';
-          onConnect({
-            source: newNodeId,
-            sourceHandle: sourceHandle,
-            target: nodeId!,
-            targetHandle: handleId,
-          });
-        }
-        connectingParams.current = null;
-      }
+      const { nodeId, handleId, handleType } = pending;
+      const fromSource = handleType === 'source';
+      const candidates = newNodePins[type]?.[fromSource ? 'target' : 'source'] ?? [];
+      const connection = candidates.map((handle): Connection => fromSource
+        ? { source: nodeId, sourceHandle: handleId, target: newNodeId, targetHandle: handle }
+        : { source: newNodeId, sourceHandle: handle, target: nodeId, targetHandle: handleId }
+      ).find(canConnect);
+
+      if (connection) onConnect(connection);
     },
     [menuState.x, menuState.y, screenToFlowPosition, addNode, onConnect]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onConnectStart = useCallback((_: any, params: OnConnectStartParams) => {
+  const onConnectStart = useCallback<OnConnectStart>((_, params) => {
     connectingParams.current = params;
   }, []);
 
-  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: FinalConnectionState) => {
-    // isValid === null means the pointer was released in empty space (no handle nearby).
-    // isValid === true means it landed on a valid handle and onConnect already fired.
-    // isValid === false means it landed near an invalid handle.
+  const onConnectEnd = useCallback<OnConnectEnd>((event, connectionState) => {
+    if (reconnecting.current) return;
     if (connectionState.isValid !== null) {
       connectingParams.current = null;
       return;
     }
-    openMenuAt(event);
+    openMenuAt(event, true);
   }, [openMenuAt]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onReconnectStart = useCallback((_: any, edge: Edge, handleType: 'source' | 'target') => {
-    connectingParams.current = {
-      nodeId: handleType === 'source' ? edge.source : edge.target,
-      handleId: (handleType === 'source' ? edge.sourceHandle : edge.targetHandle) || null,
-      handleType: handleType === 'source' ? 'source' : 'target',
-    };
+  const onReconnectStart = useCallback(() => {
+    reconnecting.current = true;
   }, []);
 
-  const onReconnect = useCallback((oldEdge: Edge, newConnection: Connection) => {
-    reconnectEdge(oldEdge, newConnection);
-  }, [reconnectEdge]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onReconnectEnd = useCallback((event: MouseEvent | TouchEvent, edge: Edge, _handleType: any, connectionState: FinalConnectionState) => {
-    deleteEdge(edge.id);
-
+  const onReconnectEnd = useCallback<NonNullable<ReactFlowProps['onReconnectEnd']>>((event, edge, _, connectionState) => {
+    reconnecting.current = false;
     if (connectionState.isValid !== null) {
-      // Landed on a handle — onReconnect already applied the new connection, just clean up.
       connectingParams.current = null;
       return;
     }
 
-    // Dropped in empty space — open the node search menu.
-    openMenuAt(event);
+    deleteEdge(edge.id);
+    openMenuAt(event, true);
   }, [deleteEdge, openMenuAt]);
 
   return (
-    <div className="w-full h-full relative" ref={reactFlowWrapper}>
+    <div className="w-full h-full relative [color-scheme:light]" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        isValidConnection={canConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onReconnectStart={onReconnectStart}
-        onReconnect={onReconnect}
+        onReconnect={reconnectEdge}
         onReconnectEnd={onReconnectEnd}
         onPaneContextMenu={onPaneContextMenu}
         onPaneClick={onPaneClick}
@@ -214,21 +210,32 @@ export function Canvas() {
       >
         <Background />
         <Controls />
-        <Panel position="top-left" className="bg-white/80 backdrop-blur-sm p-2 rounded shadow flex gap-2 text-sm z-10">
-          <span className="text-gray-500 font-medium px-2 py-1">Right-click canvas to add nodes</span>
+        <Panel position="top-left" className="flex items-center gap-2 rounded-md bg-white/90 p-1 text-sm shadow">
+          <button
+            type="button"
+            className="cursor-pointer rounded bg-gray-800 px-2.5 py-1 font-medium text-white hover:bg-gray-700"
+            onClick={() => {
+              connectingParams.current = null;
+              justOpenedMenuFromEdgeDrop.current = false;
+              setMenuState({ isOpen: true, x: 16, y: 56 });
+            }}
+          >
+            Add node
+          </button>
+          <span className="hidden px-1 text-xs text-gray-600 lg:inline">Drag between pins to connect</span>
         </Panel>
       </ReactFlow>
 
-      <ContextMenu
-        isOpen={menuState.isOpen}
+      {menuState.isOpen && <ContextMenu
         x={menuState.x}
         y={menuState.y}
         onClose={() => {
           setMenuState((prev) => ({ ...prev, isOpen: false }));
           connectingParams.current = null;
+          justOpenedMenuFromEdgeDrop.current = false;
         }}
         onAddNode={handleAddNodeFromMenu}
-      />
+      />}
     </div>
   );
 }

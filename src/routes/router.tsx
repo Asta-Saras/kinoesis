@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { ProtectedRoute, RootRedirect } from './guards';
 import { AuthPage } from '../features/auth/AuthPage';
+import { AuthCallbackPage } from '../features/auth/AuthCallbackPage';
 import { AppShell } from '../layouts/AppShell';
 import { HomePage } from '../features/home/HomePage';
 import { PageLoader } from '../components/ui/PageLoader';
@@ -13,6 +14,7 @@ const EditorPage = lazy(() => import('../features/editor/EditorPage').then((m) =
 export const router = createBrowserRouter([
   { path: '/', element: <RootRedirect /> },
   { path: '/auth', element: <AuthPage /> },
+  { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
     element: <ProtectedRoute />,
     children: [

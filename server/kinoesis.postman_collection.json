@@ -1,0 +1,62 @@
+{
+  "info": {
+    "name": "Kinoesis API",
+    "description": "Auth endpoints for the Kinoesis backend. Start the server with `npm run server`. Postman keeps the httpOnly session cookie automatically, so run Sign up / Sign in first, then Me.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000" }],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" }
+    },
+    {
+      "name": "OAuth providers status",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/providers" }
+    },
+    {
+      "name": "Sign up (developer)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/signup",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workspace\": \"developer\",\n  \"name\": \"Ada Lovelace\",\n  \"email\": \"ada@example.dev\",\n  \"password\": \"supersecret123\",\n  \"username\": \"ada\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Sign up (business)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/signup",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workspace\": \"business\",\n  \"name\": \"Jordan Rivera\",\n  \"email\": \"jordan@acme.com\",\n  \"password\": \"supersecret123\",\n  \"company\": \"Acme Inc.\",\n  \"teamSize\": \"11–50\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Sign in",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/signin",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workspace\": \"developer\",\n  \"email\": \"ada@example.dev\",\n  \"password\": \"supersecret123\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Me (current user)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" }
+    },
+    {
+      "name": "Sign out",
+      "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/signout" }
+    }
+  ]
+}

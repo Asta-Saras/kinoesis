@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
 type ContextMenuProps = {
-  isOpen: boolean;
   x: number;
   y: number;
   onClose: () => void;
@@ -25,18 +24,13 @@ const AVAILABLE_NODES = [
   { type: 'print', label: 'Print', category: 'Output' },
 ];
 
-export function ContextMenu({ isOpen, x, y, onClose, onAddNode }: ContextMenuProps) {
+export function ContextMenu({ x, y, onClose, onAddNode }: ContextMenuProps) {
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setSearch('');
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    inputRef.current?.focus({ preventScroll: true });
+  }, []);
 
   const filteredNodes = AVAILABLE_NODES.filter((n) =>
     n.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -46,7 +40,10 @@ export function ContextMenu({ isOpen, x, y, onClose, onAddNode }: ContextMenuPro
   return (
     <div
       className="absolute bg-white border border-gray-300 shadow-xl rounded-md w-64 z-50 overflow-hidden flex flex-col"
-      style={{ top: y, left: x }}
+      style={{
+        top: `clamp(0px, ${y}px, calc(100% - 18rem))`,
+        left: `clamp(0px, ${x}px, calc(100% - 16rem))`,
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="p-2 border-b border-gray-200 bg-gray-50">

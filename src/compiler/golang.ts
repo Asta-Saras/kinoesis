@@ -90,7 +90,7 @@ export class GolangGenerator implements CodeGenerator {
   private generateExpression(node: ASTNode): string {
     switch (node.type) {
       case 'BinaryExpression':
-        return `${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)}`;
+        return `(${this.generateExpression(node.left)} ${node.operator} ${this.generateExpression(node.right)})`;
       case 'Identifier':
         return node.name;
       case 'Literal':
@@ -121,6 +121,7 @@ export class GolangGenerator implements CodeGenerator {
       case '[]float': return '[]float64';
       case '[]string': return '[]string';
       case '[]bool': return '[]bool';
+      case '[]any': return '[]any';
       default: return 'any';
     }
   }

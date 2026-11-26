@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type SVGProps } from 'react';
+import { useEffect, useState, type ComponentType, type SVGProps } from 'react';
 import { KeyRound, Loader2 } from 'lucide-react';
 import type { WorkspaceType } from '../../config/workspaces';
 import type { AuthProvider } from '../../services/auth';
@@ -21,7 +21,8 @@ const PROVIDERS: Record<WorkspaceType, Provider[]> = {
 
 interface OAuthButtonsProps {
   workspace: WorkspaceType;
-  onSelect: (provider: AuthProvider) => Promise<void>;
+  /** May navigate away (OAuth redirect), in which case the spinner stays until unload. */
+  onSelect: (provider: AuthProvider) => void | Promise<void>;
   disabled?: boolean;
 }
 
@@ -29,11 +30,18 @@ export function OAuthButtons({ workspace, onSelect, disabled }: OAuthButtonsProp
   const [pending, setPending] = useState<AuthProvider | null>(null);
   const providers = PROVIDERS[workspace];
 
+  // Reset the spinner if the user comes back via the browser's Back button (bfcache).
+  useEffect(() => {
+    const reset = () => setPending(null);
+    window.addEventListener('pageshow', reset);
+    return () => window.removeEventListener('pageshow', reset);
+  }, []);
+
   const handle = async (id: AuthProvider) => {
     setPending(id);
     try {
       await onSelect(id);
-    } finally {
+    } catch {
       setPending(null);
     }
   };

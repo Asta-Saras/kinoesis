@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "demo": "vite --mode demo --host 127.0.0.1",
+    "server": "npm --prefix server run dev",
+    "server:install": "npm --prefix server install",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

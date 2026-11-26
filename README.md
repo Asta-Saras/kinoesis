@@ -22,12 +22,30 @@ Currently targets **Go** and **JavaScript**, with the compiler pipeline designed
 
 ## Getting Started
 
+### CE2 showcase
+
+```bash
+npm install
+npm run demo
+```
+
+Open the local URL printed by Vite and select **Open demo workspace → Open sample flow**. This mode runs without the API or a database.
+
+1. Click **Run** to print `Hello Kinoesis!` from the starter graph.
+2. Click **Add node**, choose **Literal Value**, and enter `42`. Drag the literal's green output pin to the gray **Value** pin on **Print**. The generated JavaScript updates to `console.log(42)`.
+3. Click **Run** again to see `42`, then switch to **Golang** to show the same graph as Go source.
+4. Use **Reset demo** to restore the starter graph or **Home** to return to the dashboard. Graph edits live in memory and reset when the browser reloads.
+
+### Run with authentication
+
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The canvas loads with a small demo graph.
+Open `http://localhost:5173`, sign in, then open the editor from the dashboard.
+
+Sign-in needs the backend in `server/`. Run it alongside the frontend with `npm run server`. For database and OAuth configuration, see **[SETUP.md](./SETUP.md)**.
 
 ```bash
 npm run build   # type-check + production build

@@ -7,6 +7,7 @@ export class Compiler {
   private edges: Edge[] = [];
   // Exec pins currently being traversed; re-entering one means the exec wiring forms a cycle
   private visiting: Set<string> = new Set();
+  private evaluating = new Set<string>();
 
   constructor(nodes: AppNode[], edges: Edge[]) {
     nodes.forEach(n => this.nodes.set(n.id, n));
@@ -232,7 +233,7 @@ export class Compiler {
         return { type: 'ArrayLength' as const, array: arrayExpr };
       }
       case 'forEach': {
-        if (sourceHandle === 'data-out-index') {
+        if (sourceHandle?.split(':')[0] === 'data-out-index') {
           return { type: 'Identifier' as const, name: (node.data.indexName as string) || 'index' };
         }
         return { type: 'Identifier' as const, name: (node.data.itemName as string) || 'item' };
@@ -246,12 +247,21 @@ export class Compiler {
     const edge = this.edges.find(e => e.target === targetNodeId && e.targetHandle?.split(':')[0] === handlePrefix);
     
     if (edge) {
-      return this.evaluateDataNode(edge.source, edge.sourceHandle);
+      const key = `${edge.source}:${edge.sourceHandle}`;
+      if (this.evaluating.has(key)) {
+        throw new Error(`Data cycle detected at node "${edge.source}". Disconnect one of the pins in the cycle.`);
+      }
+      this.evaluating.add(key);
+      try {
+        return this.evaluateDataNode(edge.source, edge.sourceHandle);
+      } finally {
+        this.evaluating.delete(key);
+      }
     }
 
     // Fallback logic
     const targetNode = this.nodes.get(targetNodeId);
-    let fallbackValue = targetNode?.data?.[handlePrefix];
+    const fallbackValue = targetNode?.data?.[handlePrefix];
 
     if (fallbackValue !== undefined && fallbackValue !== '') {
       let parsedValue: any = fallbackValue;

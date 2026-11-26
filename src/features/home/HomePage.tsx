@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Check, Inbox, Plus } from 'lucide-react';
 import { WORKSPACES } from '../../config/workspaces';
-import { useAuthStore } from '../../stores/authStore';
+import { isDemoMode, useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../lib/cn';
 
@@ -17,6 +17,7 @@ export function HomePage() {
   const isDev = user.workspace === 'developer';
   const firstName = user.name.split(' ')[0];
   const noun = isDev ? 'flows' : 'workflows';
+  const editorAction = isDemoMode ? 'Open sample flow' : ws.primaryAction;
 
   const checklist = [
     { label: 'Create your account', done: true },
@@ -41,7 +42,7 @@ export function HomePage() {
         <Link to="/editor">
           <Button size="lg">
             <Plus className="h-4 w-4" />
-            {ws.primaryAction}
+            {editorAction}
           </Button>
         </Link>
       </section>
@@ -78,8 +79,10 @@ export function HomePage() {
                     <span className="rounded border border-line px-1.5 py-px text-[9px] tracking-wide text-zinc-500 uppercase">Soon</span>
                   )}
                 </div>
-                <div className="mt-4 text-sm font-semibold text-zinc-100">{title}</div>
-                <div className="mt-1 text-[13px] leading-snug text-zinc-500">{description}</div>
+                <div className="mt-4 text-sm font-semibold text-zinc-100">{isDemoMode && to === '/editor' ? editorAction : title}</div>
+                <div className="mt-1 text-[13px] leading-snug text-zinc-500">
+                  {isDemoMode && to === '/editor' ? 'Connect nodes and see the generated code update.' : description}
+                </div>
               </div>
             );
             return to ? (
@@ -97,23 +100,23 @@ export function HomePage() {
       <section className="grid gap-3 lg:grid-cols-[1.6fr_1fr]">
         <div className="rounded-xl border border-line bg-ink-900/70 p-5 backdrop-blur">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-300">Recent {noun}</h2>
-            <span className="text-xs text-zinc-600">0 total</span>
+            <h2 className="text-sm font-semibold text-zinc-300">{isDemoMode ? 'Example' : `Recent ${noun}`}</h2>
+            {!isDemoMode && <span className="text-xs text-zinc-600">0 total</span>}
           </div>
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-white/[0.03] text-zinc-500">
               <Inbox className="h-5 w-5" />
             </span>
-            <div className="mt-3 text-sm font-medium text-zinc-200">No {noun} yet</div>
+            <div className="mt-3 text-sm font-medium text-zinc-200">{isDemoMode ? 'Hello Kinoesis' : `No ${noun} yet`}</div>
             <div className="mt-1 max-w-xs text-[13px] text-zinc-500">
-              {isDev
+              {isDemoMode ? 'Run the sample, then wire a new value into Print.' : isDev
                 ? 'Open the editor to wire your first graph and watch it compile to code.'
                 : 'Create a workflow to start automating work across your tools.'}
             </div>
             <Link to="/editor" className="mt-4">
               <Button variant="secondary" size="sm">
                 <Plus className="h-3.5 w-3.5" />
-                {ws.primaryAction}
+                {editorAction}
               </Button>
             </Link>
           </div>
